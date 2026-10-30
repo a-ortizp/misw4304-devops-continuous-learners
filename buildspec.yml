@@ -1,0 +1,40 @@
+# Buildspec de HUMO solo para el fork de prueba de la HU-E2.4.
+# NO es el buildspec real (ese es la HU-E2.3); valida el contrato de la plantilla.
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      python: 3.14
+    commands:
+      - python --version
+      - pip install -q -r requirements.txt pytest-cov
+  build:
+    commands:
+      - echo "CODEBUILD_RESOLVED_SOURCE_VERSION=$CODEBUILD_RESOLVED_SOURCE_VERSION"
+      - mkdir -p reports
+      - python -m pytest --junitxml=reports/unit.xml --cov=app --cov-report=xml:reports/coverage.xml
+      - cp reports/unit.xml reports/integration.xml
+  post_build:
+    commands:
+      - echo "$CODEBUILD_RESOLVED_SOURCE_VERSION" > VERSION
+reports:
+  $UNIT_REPORT_GROUP_ARN:
+    files: [unit.xml]
+    base-directory: reports
+    file-format: JUNITXML
+  $INTEGRATION_REPORT_GROUP_ARN:
+    files: [integration.xml]
+    base-directory: reports
+    file-format: JUNITXML
+  $COVERAGE_REPORT_GROUP_ARN:
+    files: [coverage.xml]
+    base-directory: reports
+    file-format: COBERTURAXML
+artifacts:
+  files:
+    - '**/*'
+  exclude-paths:
+    - tests/**/*
+    - docs/**/*
+    - reports/**/*
+    - .git/**/*
